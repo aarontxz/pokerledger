@@ -9,11 +9,25 @@ datasource db {
 }
 
 model Session {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
-  isActive  Boolean  @default(true)
-  players   Player[]
+  id            String        @id @default(cuid())
+  name          String
+  createdAt     DateTime      @default(now())
+  isActive      Boolean       @default(true)
+  defaultBuyIn  Int?
+  ownerPassword String?
+  players       Player[]
+  activityLogs  ActivityLog[]
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  sessionId  String
+  playerName String
+  action     String   @default("stack_update")
+  newStack   Int?
+  deviceId   String?
+  createdAt  DateTime @default(now())
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 model Player {
@@ -30,6 +44,7 @@ model BuyIn {
   id        String   @id @default(cuid())
   playerId  String
   amount    Int
+  deviceId  String?
   createdAt DateTime @default(now())
   player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
 }

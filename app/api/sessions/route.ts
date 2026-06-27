@@ -11,10 +11,13 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const { name } = await req.json();
+  const { name, defaultBuyIn, ownerPassword } = await req.json();
   if (!name?.trim()) {
     return NextResponse.json({ error: "Session name required" }, { status: 400 });
   }
-  const session = await prisma.session.create({ data: { name: name.trim() } });
-  return NextResponse.json(session, { status: 201 });
+  const data: { name: string; defaultBuyIn?: number; ownerPassword?: string } = { name: name.trim() };
+  if (typeof defaultBuyIn === "number" && defaultBuyIn > 0) data.defaultBuyIn = defaultBuyIn;
+  if (ownerPassword?.trim()) data.ownerPassword = ownerPassword.trim();
+  const session = await prisma.session.create({ data });
+  return NextResponse.json({ id: session.id }, { status: 201 });
 }
