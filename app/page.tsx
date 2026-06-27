@@ -86,7 +86,7 @@ export default function Home() {
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="text-center mb-10">
-          <div className="text-5xl mb-3">♠️</div>
+          <img src="/favicon.ico" alt="Poker Ledger" className="w-20 h-20 mx-auto mb-3" />
           <h1 className="text-4xl font-bold text-white tracking-tight">Poker Ledger</h1>
           <p className="text-slate-400 mt-2">Share a link so players report their own stack — you control the buy-ins</p>
         </div>
