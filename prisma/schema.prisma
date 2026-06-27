@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  isActive  Boolean  @default(true)
+  players   Player[]
+}
+
+model Player {
+  id           String   @id @default(cuid())
+  sessionId    String
+  name         String
+  currentStack Int      @default(0)
+  createdAt    DateTime @default(now())
+  session      Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  buyIns       BuyIn[]
+}
+
+model BuyIn {
+  id        String   @id @default(cuid())
+  playerId  String
+  amount    Int
+  createdAt DateTime @default(now())
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
