@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import type { Player } from "./SessionBoard";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 export function PlayerCard({
   player,
@@ -27,6 +28,7 @@ export function PlayerCard({
   const [buyInInput, setBuyInInput] = useState(String(defaultBuyIn ?? ""));
   const [savingStack, setSavingStack] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [removeConfirm, setRemoveConfirm] = useState(false);
   const deviceIdRef = useRef<string>("");
 
   useEffect(() => {
@@ -78,7 +80,6 @@ export function PlayerCard({
   }
 
   async function removePlayer() {
-    if (!confirm(`Remove ${player.name}?`)) return;
     await fetch(`/api/sessions/${sessionId}/players/${player.id}`, { method: "DELETE" });
     onUpdate();
   }
@@ -98,7 +99,7 @@ export function PlayerCard({
         <h3 className="font-bold text-lg text-white truncate">{player.name}</h3>
         {isOwner && (
           <button
-            onClick={removePlayer}
+            onClick={() => setRemoveConfirm(true)}
             className="text-slate-700 hover:text-red-400 transition-colors text-xs ml-2 shrink-0"
             title="Remove player"
           >
@@ -202,6 +203,16 @@ export function PlayerCard({
       >
         {isEven ? "Break even" : isUp ? `+$${net} profit` : `-$${Math.abs(net)} loss`}
       </div>
+
+      {removeConfirm && (
+        <ConfirmDialog
+          message={`Remove ${player.name} from the session?`}
+          confirmLabel="Remove"
+          danger
+          onConfirm={() => { setRemoveConfirm(false); removePlayer(); }}
+          onCancel={() => setRemoveConfirm(false)}
+        />
+      )}
     </div>
   );
 }

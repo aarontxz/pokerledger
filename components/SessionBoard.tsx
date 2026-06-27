@@ -5,6 +5,7 @@ import { PlayerCard } from "./PlayerCard";
 import { AddPlayerForm } from "./AddPlayerForm";
 import { ChipSummary } from "./ChipSummary";
 import { SessionLog } from "./SessionLog";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 export type BuyIn = { id: string; amount: number; deviceId: string | null; createdAt: string };
 export type Player = {
@@ -46,6 +47,7 @@ export function SessionBoard({ sessionId }: { sessionId: string }) {
 
   const [buyInInput, setBuyInInput] = useState("");
   const [editingBuyIn, setEditingBuyIn] = useState(false);
+  const [toggleConfirm, setToggleConfirm] = useState(false);
 
   const storageKey = `pokerledger_owner_${sessionId}`;
 
@@ -163,11 +165,23 @@ export function SessionBoard({ sessionId }: { sessionId: string }) {
         <div className="flex items-center gap-3 min-w-0 mb-3">
           <a href="/" className="text-slate-500 hover:text-slate-300 transition-colors shrink-0 text-lg">←</a>
           <h1 className="text-xl sm:text-2xl font-bold text-white truncate">{session.name}</h1>
-          <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${
-            session.isActive ? "bg-emerald-900 text-emerald-300" : "bg-red-900 text-red-300"
-          }`}>
-            {session.isActive ? "LIVE" : "ENDED"}
-          </span>
+          {isOwner ? (
+            <button
+              onClick={() => setToggleConfirm(true)}
+              className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full transition-opacity hover:opacity-70 ${
+                session.isActive ? "bg-emerald-900 text-emerald-300" : "bg-red-900 text-red-300"
+              }`}
+              title={session.isActive ? "Click to close session" : "Click to reopen session"}
+            >
+              {session.isActive ? "LIVE" : "ENDED"}
+            </button>
+          ) : (
+            <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${
+              session.isActive ? "bg-emerald-900 text-emerald-300" : "bg-red-900 text-red-300"
+            }`}>
+              {session.isActive ? "LIVE" : "ENDED"}
+            </span>
+          )}
         </div>
         {/* Action row — wraps on mobile */}
         <div className="flex flex-wrap items-center gap-2">
@@ -177,23 +191,6 @@ export function SessionBoard({ sessionId }: { sessionId: string }) {
           <button onClick={copyLink} className="btn-ghost text-sm">
             {copied ? "Copied! ✓" : "Share Link"}
           </button>
-          {isOwner && (
-            <button
-              onClick={async () => {
-                await fetch(`/api/sessions/${sessionId}`, {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ isActive: !session.isActive }),
-                });
-                refresh();
-              }}
-              className={`text-xs font-medium px-3 py-2 rounded-lg bg-slate-800 transition-colors ${
-                session.isActive ? "text-red-400 hover:text-red-300" : "text-emerald-400 hover:text-emerald-300"
-              }`}
-            >
-              {session.isActive ? "Close session" : "Reopen session"}
-            </button>
-          )}
           {isOwner ? (
             <button onClick={logout} className="text-xs text-slate-500 hover:text-slate-300 px-3 py-2 rounded-lg bg-slate-800 transition-colors">
               Leave host
@@ -281,6 +278,26 @@ export function SessionBoard({ sessionId }: { sessionId: string }) {
       {isOwner && <AddPlayerForm sessionId={sessionId} onAdd={refresh} />}
 
       <SessionLog session={session} />
+
+      {toggleConfirm && (
+        <ConfirmDialog
+          message={session.isActive
+            ? "Close this session? Players won't be able to update their stacks."
+            : "Reopen this session?"}
+          confirmLabel={session.isActive ? "Close session" : "Reopen"}
+          danger={session.isActive}
+          onConfirm={async () => {
+            setToggleConfirm(false);
+            await fetch(`/api/sessions/${sessionId}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ isActive: !session.isActive }),
+            });
+            refresh();
+          }}
+          onCancel={() => setToggleConfirm(false)}
+        />
+      )}
     </main>
   );
 }

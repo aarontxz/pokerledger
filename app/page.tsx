@@ -31,7 +31,13 @@ export default function Home() {
   const [passwordInput, setPasswordInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [mySessionIds, setMySessionIds] = useState<Set<string>>(new Set());
   const buyInRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("pokerledger_my_sessions");
+    if (stored) setMySessionIds(new Set(JSON.parse(stored)));
+  }, []);
 
   useEffect(() => {
     fetch("/api/sessions")
@@ -67,6 +73,8 @@ export default function Home() {
       });
       const data = await res.json();
       localStorage.setItem(`pokerledger_owner_${data.id}`, "true");
+      const existing = JSON.parse(localStorage.getItem("pokerledger_my_sessions") ?? "[]");
+      localStorage.setItem("pokerledger_my_sessions", JSON.stringify([...existing, data.id]));
       router.push(`/session/${data.id}`);
     } finally {
       setLoading(false);
@@ -159,13 +167,13 @@ export default function Home() {
         </div>
 
         {/* Recent sessions */}
-        {sessions.length > 0 && (
+        {sessions.filter((s) => mySessionIds.has(s.id)).length > 0 && (
           <div>
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
               Recent Sessions
             </h2>
             <div className="flex flex-col gap-2">
-              {sessions.map((s) => {
+              {sessions.filter((s) => mySessionIds.has(s.id)).map((s) => {
                 const { totalBuyIn, totalStack, playerCount } = sessionStats(s);
                 const diff = totalStack - totalBuyIn;
                 return (
