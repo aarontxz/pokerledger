@@ -13,7 +13,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid stack value" }, { status: 400 });
   }
 
-  const existing = await prisma.player.findUnique({ where: { id: playerId }, select: { name: true } });
+  const existing = await prisma.player.findUnique({ where: { id: playerId }, select: { name: true, currentStack: true } });
   const [player] = await prisma.$transaction([
     prisma.player.update({
       where: { id: playerId },
@@ -24,6 +24,7 @@ export async function PATCH(
       data: {
         sessionId,
         playerName: existing?.name ?? "Unknown",
+        oldStack: existing?.currentStack ?? null,
         newStack: currentStack,
         deviceId: deviceId ?? null,
       },

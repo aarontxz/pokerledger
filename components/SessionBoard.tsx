@@ -6,6 +6,7 @@ import { AddPlayerForm } from "./AddPlayerForm";
 import { ChipSummary } from "./ChipSummary";
 import { SessionLog } from "./SessionLog";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { HelpSheet } from "./HelpSheet";
 
 export type BuyIn = { id: string; amount: number; deviceId: string | null; createdAt: string };
 export type Player = {
@@ -19,6 +20,7 @@ export type ActivityLog = {
   id: string;
   playerName: string;
   action: string;
+  oldStack: number | null;
   newStack: number | null;
   deviceId: string | null;
   createdAt: string;
@@ -42,12 +44,13 @@ export function SessionBoard({ sessionId }: { sessionId: string }) {
   const [isOwner, setIsOwner] = useState(false);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
-  const [passwordError, setPasswordError] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
 
   const [buyInInput, setBuyInInput] = useState("");
   const [editingBuyIn, setEditingBuyIn] = useState(false);
   const [toggleConfirm, setToggleConfirm] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const storageKey = `pokerledger_owner_${sessionId}`;
 
@@ -80,21 +83,26 @@ export function SessionBoard({ sessionId }: { sessionId: string }) {
   async function submitPassword(e: React.FormEvent) {
     e.preventDefault();
     setVerifying(true);
-    setPasswordError(false);
+    setPasswordError(null);
     const res = await fetch(`/api/sessions/${sessionId}/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password: passwordInput }),
     });
-    const { isOwner: ok } = await res.json();
+    const data = await res.json();
     setVerifying(false);
-    if (ok) {
+    if (res.status === 429) {
+      setPasswordError("Too many attempts. Try again in 15 minutes.");
+      setPasswordInput("");
+      return;
+    }
+    if (data.isOwner) {
       localStorage.setItem(storageKey, "true");
       setIsOwner(true);
       setShowPasswordPrompt(false);
       setPasswordInput("");
     } else {
-      setPasswordError(true);
+      setPasswordError("Incorrect password.");
     }
   }
 
@@ -197,14 +205,24 @@ export function SessionBoard({ sessionId }: { sessionId: string }) {
             </button>
           ) : (
             <button
-              onClick={() => { setShowPasswordPrompt((v) => !v); setPasswordError(false); setPasswordInput(""); }}
+              onClick={() => { setShowPasswordPrompt((v) => !v); setPasswordError(null); setPasswordInput(""); }}
               className="text-xs text-slate-500 hover:text-slate-300 px-3 py-2 rounded-lg bg-slate-800 transition-colors"
             >
               Host login
             </button>
           )}
+          <button
+            onClick={() => setShowHelp((v) => !v)}
+            className="text-xs text-slate-600 hover:text-slate-300 w-7 h-7 flex items-center justify-center rounded-full bg-slate-800 transition-colors font-semibold"
+            title="Help"
+          >
+            ?
+          </button>
         </div>
       </div>
+
+      {/* Help sheet */}
+      {showHelp && <HelpSheet isOwner={isOwner} onClose={() => setShowHelp(false)} />}
 
       {/* Password prompt */}
       {showPasswordPrompt && (
@@ -216,7 +234,7 @@ export function SessionBoard({ sessionId }: { sessionId: string }) {
               type="text"
               placeholder="Password"
               value={passwordInput}
-              onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
+              onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(null); }}
               autoFocus
             />
             <button type="submit" className="btn-primary text-sm" disabled={verifying || !passwordInput}>
@@ -226,7 +244,7 @@ export function SessionBoard({ sessionId }: { sessionId: string }) {
               ✕
             </button>
           </div>
-          {passwordError && <p className="text-sm text-red-400">Incorrect password</p>}
+          {passwordError && <p className="text-sm text-red-400">{passwordError}</p>}
         </form>
       )}
 

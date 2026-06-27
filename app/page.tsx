@@ -88,7 +88,7 @@ export default function Home() {
         <div className="text-center mb-10">
           <div className="text-5xl mb-3">♠️</div>
           <h1 className="text-4xl font-bold text-white tracking-tight">Poker Ledger</h1>
-          <p className="text-slate-400 mt-2">Track buy-ins and stacks in real time</p>
+          <p className="text-slate-400 mt-2">Share a link so players report their own stack — you control the buy-ins</p>
         </div>
 
         {/* Create session */}
@@ -165,6 +165,31 @@ export default function Home() {
             </form>
           )}
         </div>
+
+        {/* How it works — shown only before first session */}
+        {mySessionIds.size === 0 && (
+          <div className="mb-8">
+            <h2 className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-3">How it works</h2>
+            <div className="flex flex-col gap-2">
+              {[
+                { step: "1", title: "Create a session", desc: "Set a name, default buy-in, and a host password." },
+                { step: "2", title: "Share the link", desc: "Send it to everyone at the table." },
+                { step: "3", title: "Everyone reports their stack", desc: "Players tap their card to enter their chip count. Only the host can add or adjust buy-ins." },
+                { step: "4", title: "Every action is logged", desc: "Stack updates, buy-ins, and removals are all timestamped and visible at the bottom of the session." },
+              ].map(({ step, title, desc }) => (
+                <div key={step} className="flex items-start gap-3">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-slate-800 text-slate-500 text-xs flex items-center justify-center font-semibold mt-0.5">
+                    {step}
+                  </span>
+                  <div>
+                    <span className="text-slate-300 text-sm font-medium">{title} </span>
+                    <span className="text-slate-500 text-sm">{desc}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Recent sessions */}
         {sessions.filter((s) => mySessionIds.has(s.id)).length > 0 && (

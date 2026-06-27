@@ -8,6 +8,7 @@ type LogEntry = {
   playerName: string;
   kind: "buyin" | "stack" | "removed";
   amount?: number;
+  oldStack?: number;
   newStack?: number;
   deviceId: string | null;
 };
@@ -34,6 +35,7 @@ function buildLog(session: Session): LogEntry[] {
       ts: new Date(log.createdAt),
       playerName: log.playerName,
       kind: log.action === "player_removed" ? "removed" : "stack",
+      oldStack: log.oldStack ?? undefined,
       newStack: log.newStack ?? undefined,
       deviceId: log.deviceId,
     });
@@ -92,7 +94,10 @@ export function SessionLog({ session }: { session: Session }) {
                 <span className="text-slate-500 text-xs">was removed</span>
               ) : (
                 <>
-                  <span className="text-slate-500 text-xs">stack →</span>
+                  {e.oldStack != null && (
+                    <span className="text-slate-500 font-semibold">${e.oldStack}</span>
+                  )}
+                  <span className="text-slate-600 text-xs">→</span>
                   <span className="text-sky-400 font-semibold">${e.newStack}</span>
                 </>
               )}
